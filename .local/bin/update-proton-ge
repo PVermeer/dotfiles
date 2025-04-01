@@ -1,0 +1,74 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+script_name=$(basename $0)
+
+is_updated="false"
+
+update_pronton_ge() {
+  steam_comp_dir="$HOME/.local/share/Steam/compatibilitytools.d"
+  steam_proton_ge_dir="$steam_comp_dir/GE-Proton-latest"
+  steam_proton_ge_version_file="$steam_proton_ge_dir/version"
+  latest_uri="https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest"
+
+  echo -e "\nGetting latest version"
+  latest_version=$(curl -f $latest_uri | jq -r ".tag_name") || return 1
+  installed_version=$(awk '{ print $2 }' $steam_proton_ge_version_file) || echo ""
+
+  if [ ! -d "$steam_proton_ge_dir" ]; then
+    mkdir $steam_proton_ge_dir
+  fi
+
+  echo -e "\nChecking versions"
+  echo "Latest version: $latest_version"
+  echo "Installed version: $installed_version"
+
+  if [ "$latest_version" = "$installed_version" ]; then
+    echo -e "\nNo update found"
+    return 0
+  fi
+
+  echo -e "\nUpdating $installed_version to $latest_version"
+
+  download_url="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/$latest_version/$latest_version.tar.gz"
+  latest_tar_file="$XDG_RUNTIME_DIR/$latest_version.tar.gz"
+  curl -f -L -o "$latest_tar_file" "$download_url" || return 1
+
+  echo -e "\nTemp file in: $latest_tar_file"
+
+  echo -e "\nExtracting archive to $steam_proton_ge_dir"
+  rm -rf $steam_proton_ge_dir/*
+  tar -xf $latest_tar_file -C $steam_proton_ge_dir --strip-components=1
+  # Change name to latest
+  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" /home/pimv/.steam/steam/compatibilitytools.d/GE-Proton-latest/compatibilitytool.vdf
+
+  rm $latest_tar_file
+  is_updated="true"
+  echo -e "\nDone"
+}
+
+max_restart=5
+restart_timeout=5
+
+restart_counter=$((0))
+status="failed"
+
+while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
+  if update_pronton_ge; then
+    status="success"
+    if [ "$is_updated" = "true" ]; then
+      notify-send -a "Proton-GE updater" "Proton-GE update" "Proton-GE has been updated to $latest_version"
+    fi
+    break
+  else
+    restart_counter=$(($restart_counter + 1))
+    sleep $restart_timeout
+    echo "Retry to update: $restart_counter"
+  fi
+done
+
+if [ "$status" = "failed" ]; then
+  echo -e "\nFailed to update Proton-GE"
+  exit 1
+fi
