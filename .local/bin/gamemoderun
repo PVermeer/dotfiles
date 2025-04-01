@@ -1,0 +1,30 @@
+#!/bin/bash
+
+default_profile="balanced-bazzite"
+performance_profile="throughput-performance-bazzite"
+current_profile=$(tuned-adm active | awk '{print $NF}')
+
+if [ "$1" = "default" ]; then
+    echo -e "\n Switching to default profile: $default_profile"
+	tuned-adm profile $default_profile
+	exit 0
+fi
+
+exit_app() {
+	echo -e "\nInterrupted\n"
+	echo -e "\n Switching to previous profile: $current_profile"
+	tuned-adm profile $current_profile
+	exit 0
+}
+trap 'exit_app' INT
+
+echo -e "\nActive tuned profile: $current_profile"
+
+echo -e "\n Switching to tuned profile: $performance_profile"
+tuned-adm profile $performance_profile
+
+echo -e "\n Running application"
+"$@"
+
+exit_app
+
