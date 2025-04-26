@@ -41,7 +41,7 @@ update_pronton_ge() {
   rm -rf $steam_proton_ge_dir/*
   tar -xf $latest_tar_file -C $steam_proton_ge_dir --strip-components=1
   # Change name to latest
-  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" /home/pimv/.steam/steam/compatibilitytools.d/GE-Proton-latest/compatibilitytool.vdf
+  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" $HOME/.steam/steam/compatibilitytools.d/GE-Proton-latest/compatibilitytool.vdf
 
   rm $latest_tar_file
   is_updated="true"
