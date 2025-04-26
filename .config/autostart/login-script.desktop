@@ -2,7 +2,7 @@
 Type=Application
 Name=Login script
 Comment=Script that runs after login
-Exec=bash /home/pimv/.config/autostart/login.sh
+Exec=bash -c "$HOME/.config/autostart/login.sh"
 Terminal=false
 StartupNotify=false
 Categories=Utility;Application;
