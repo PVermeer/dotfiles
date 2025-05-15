@@ -4,27 +4,49 @@ default_profile="balanced-bazzite"
 performance_profile="throughput-performance-bazzite"
 current_profile=$(tuned-adm active | awk '{print $NF}')
 
+lact_performance_profile="Performance"
+lact_default_profile="Balanced"
+
+set_lact_profile() {
+	local name=$1
+	local json="{\"command\": \"set_profile\", \"args\": {\"name\":\"$name\"}}"
+	echo $json | ncat -U /run/lactd.sock &>/dev/null
+}
+
+set_default_profiles() {
+	echo "Switching to tuned profile: $current_profile"
+	tuned-adm profile $current_profile
+
+	echo "Switching to lact profile: $lact_default_profile"
+	set_lact_profile $lact_default_profile
+}
+
+set_performance_profiles() {
+	echo "Switching to tuned profile: $performance_profile"
+	tuned-adm profile $performance_profile
+
+	echo "Switching to lact profile: $lact_performance_profile"
+	set_lact_profile $lact_performance_profile
+}
+
 if [ "$1" = "default" ]; then
-    echo -e "\n Switching to default profile: $default_profile"
-	tuned-adm profile $default_profile
+	echo "Switching to default profiles:"
+	set_default_profiles
 	exit 0
 fi
 
 exit_app() {
 	echo -e "\nInterrupted\n"
-	echo -e "\n Switching to previous profile: $current_profile"
-	tuned-adm profile $current_profile
+	set_default_profiles
 	exit 0
 }
 trap 'exit_app' INT
 
-echo -e "\nActive tuned profile: $current_profile"
+echo "Active tuned profile: $current_profile"
 
-echo -e "\n Switching to tuned profile: $performance_profile"
-tuned-adm profile $performance_profile
+set_performance_profiles
 
-echo -e "\n Running application"
+echo -e "Running application\n"
 "$@"
 
 exit_app
-
