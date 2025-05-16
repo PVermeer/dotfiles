@@ -8,8 +8,11 @@ is_updated="false"
 
 update_pronton_ge() {
   steam_comp_dir="$HOME/.local/share/Steam/compatibilitytools.d"
+  steam_config_file="$HOME/.local/share/Steam/config/config.vdf"
+
   steam_proton_ge_dir="$steam_comp_dir/GE-Proton-latest"
   steam_proton_ge_version_file="$steam_proton_ge_dir/version"
+  steam_proton_ge_compatibility_file="$steam_proton_ge_dir/compatibilitytool.vdf"
   latest_uri="https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest"
 
   echo -e "\nGetting latest version"
@@ -40,11 +43,11 @@ update_pronton_ge() {
   echo -e "\nExtracting archive to $steam_proton_ge_dir"
   rm -rf $steam_proton_ge_dir/*
   tar -xf $latest_tar_file -C $steam_proton_ge_dir --strip-components=1
+
   # Change name to latest
-  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" $HOME/.steam/steam/compatibilitytools.d/GE-Proton-latest/compatibilitytool.vdf
-  
-  # TODO: also update /home/pimv/.steam/steam/config/config.vdf:
-  # "CompatToolMapping"	{ "0" { "name"		"GE-Proton10-1"	"config"		""	"priority"		"75" 	}
+  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" $steam_proton_ge_compatibility_file
+  # Update steam config to latest proton-ge version
+  sed -i "s/\"GE-Proton.*\"/\"$latest_version\"/" $steam_config_file
 
   rm $latest_tar_file
   is_updated="true"
