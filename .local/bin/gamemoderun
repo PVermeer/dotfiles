@@ -1,48 +1,59 @@
 #!/bin/bash
 
-default_profile="balanced-bazzite"
-performance_profile="throughput-performance-bazzite"
-current_profile=$(tuned-adm active | awk '{print $NF}')
+tuned_default_profile="balanced-bazzite"
+tuned_performance_profile="throughput-performance-bazzite"
+tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
 
 lact_performance_profile="Performance"
 lact_default_profile="Balanced"
+lact_current_profile=$(echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
 
 set_lact_profile() {
-	local name=$1
+	local name="$@"
 	local json="{\"command\": \"set_profile\", \"args\": {\"name\":\"$name\"}}"
 	echo $json | ncat -U /run/lactd.sock &>/dev/null
 }
 
 set_default_profiles() {
-	echo "Switching to tuned profile: $current_profile"
-	tuned-adm profile $current_profile
+	echo "Switching to tuned profile: $tuned_default_profile"
+	tuned-adm profile $tuned_default_profile
 
 	echo "Switching to lact profile: $lact_default_profile"
 	set_lact_profile $lact_default_profile
 }
 
 set_performance_profiles() {
-	echo "Switching to tuned profile: $performance_profile"
-	tuned-adm profile $performance_profile
+	echo "Switching to tuned profile: $tuned_performance_profile"
+	tuned-adm profile $tuned_performance_profile
 
 	echo "Switching to lact profile: $lact_performance_profile"
 	set_lact_profile $lact_performance_profile
 }
+
+set_revert_profiles() {
+	echo "Switching to tuned profile: $tuned_current_profile"
+	tuned-adm profile $tuned_current_profile
+
+	echo "Switching to lact profile: $lact_current_profile"
+	set_lact_profile $lact_current_profile
+}
+
+exit_app() {
+	echo -e "\nInterrupted\n"
+	set_revert_profiles
+	exit 0
+}
+trap 'exit_app' INT
+
+echo "Active tuned profile: $tuned_current_profile"
+echo "Active lact profile: $lact_current_profile"
+echo ""
 
 if [ "$1" = "default" ]; then
 	echo "Switching to default profiles:"
 	set_default_profiles
 	exit 0
 fi
-
-exit_app() {
-	echo -e "\nInterrupted\n"
-	set_default_profiles
-	exit 0
-}
-trap 'exit_app' INT
-
-echo "Active tuned profile: $current_profile"
 
 set_performance_profiles
 
