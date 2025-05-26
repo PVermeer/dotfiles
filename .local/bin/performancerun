@@ -1,17 +1,19 @@
 #!/bin/bash
 
+set -o pipefail
+
 tuned_default_profile="balanced-bazzite"
 tuned_performance_profile="throughput-performance-bazzite"
 tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
 
 lact_performance_profile="Performance"
 lact_default_profile="Balanced"
-lact_current_profile=$(echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
+lact_current_profile=$(cd $HOME && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
 
 set_lact_profile() {
 	local name="$@"
 	local json="{\"command\": \"set_profile\", \"args\": {\"name\":\"$name\"}}"
-	echo $json | ncat -U /run/lactd.sock &>/dev/null
+	(cd $HOME && echo $json | ncat -U /run/lactd.sock &>/dev/null)
 }
 
 set_default_profiles() {
