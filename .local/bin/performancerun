@@ -1,6 +1,26 @@
 #!/bin/bash
 
+set -e
 set -o pipefail
+
+# Some restart logic because the flatpak LACT daemon takes ages to load on login
+max_restart=20
+restart_timeout=1
+restart_counter=$((0))
+status="failed"
+while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
+	if systemctl is-active --quiet lactd.service; then
+		status="success"
+		break
+	else
+		restart_counter=$(($restart_counter + 1))
+		sleep $restart_timeout
+	fi
+done
+if [ "$status" = "failed" ]; then
+	echo "Error: Lact daemon or socket is not available"
+	exit 1
+fi
 
 tuned_default_profile="balanced-bazzite"
 tuned_performance_profile="throughput-performance-bazzite"

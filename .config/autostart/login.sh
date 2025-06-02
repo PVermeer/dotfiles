@@ -16,7 +16,7 @@ function run_command() {
   local clean_string=${app//[\/]/\\/}
   local clean_string2=$(echo $clean_string | awk -F "&& " '{ print $NF }')
   shift
-  $@ 1> >(sed "s/^/[$clean_string2] /") 2> >(sed "s/^/[$clean_string2] /" >&2)
+  $@ 1> >(sed "s/^/[$clean_string2] /") 2>&1
 }
 
 # Get login commands if defined
