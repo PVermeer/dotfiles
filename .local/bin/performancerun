@@ -30,6 +30,40 @@ lact_performance_profile="Performance"
 lact_default_profile="Balanced"
 lact_current_profile=$(cd $HOME && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
 
+app_to_run="$@"
+lock_dir="$XDG_RUNTIME_DIR/performancerun"
+lock_id_file="$lock_dir/$(date +%s)-($(basename "$app_to_run")).lock"
+lock_previous_settings_file_name="previous_settings"
+lock_previous_settings_file="$lock_dir/$lock_previous_settings_file_name"
+
+mkdir -p $lock_dir
+if [ -f "$lock_previous_settings_file" ]; then
+	source $lock_previous_settings_file
+fi
+
+is_locked() {
+	if [ -n "$(ls -A "$lock_dir" -I $lock_previous_settings_file_name)" ]; then
+		echo "true"
+	else
+		echo "false"
+	fi
+}
+
+set_lock() {
+	touch "$lock_id_file"
+	if [ ! -f "$lock_previous_settings_file" ]; then
+		echo "tuned_current_profile=$tuned_current_profile" >>$lock_previous_settings_file
+		echo "lact_current_profile=$lact_current_profile" >>$lock_previous_settings_file
+	fi
+}
+
+remove_lock() {
+	rm "$lock_id_file"
+	if [ "$(is_locked)" = "false" ]; then
+		rm "$lock_previous_settings_file"
+	fi
+}
+
 set_lact_profile() {
 	local name="$@"
 	local json="{\"command\": \"set_profile\", \"args\": {\"name\":\"$name\"}}"
@@ -62,7 +96,12 @@ set_revert_profiles() {
 
 exit_app() {
 	echo -e "\nInterrupted\n"
-	set_revert_profiles
+	remove_lock
+	if [ "$(is_locked)" = "false" ]; then
+		set_revert_profiles
+	else
+		echo "Performancemode still in use by another app"
+	fi
 	exit 0
 }
 trap 'exit_app' INT
@@ -77,9 +116,10 @@ if [ "$1" = "default" ]; then
 	exit 0
 fi
 
+set_lock
 set_performance_profiles
 
 echo -e "Running application\n"
-"$@"
+$app_to_run
 
 exit_app
