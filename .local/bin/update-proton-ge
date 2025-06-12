@@ -6,7 +6,7 @@ script_name=$(basename $0)
 
 is_updated="false"
 
-update_pronton_ge() {
+update_proton_ge() {
   steam_comp_dir="$HOME/.local/share/Steam/compatibilitytools.d"
   steam_config_file="$HOME/.local/share/Steam/config/config.vdf"
 
@@ -61,7 +61,7 @@ restart_counter=$((0))
 status="failed"
 
 while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
-  if update_pronton_ge; then
+  if update_proton_ge; then
     status="success"
     if [ "$is_updated" = "true" ]; then
       notify-send -a "Proton-GE updater" "Proton-GE update" "Proton-GE has been updated to $latest_version"
