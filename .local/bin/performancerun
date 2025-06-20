@@ -42,6 +42,11 @@ if [ -f "$lock_previous_settings_file" ]; then
 fi
 
 is_locked() {
+	if [ ! -d $lock_dir ]; then
+		echo "false"
+		return
+	fi
+
 	if [ -n "$(ls -A "$lock_dir" -I $lock_previous_settings_file_name)" ]; then
 		echo "true"
 	else
@@ -58,10 +63,18 @@ set_lock() {
 }
 
 remove_lock() {
+	if [ ! -f $lock_id_file ]; then return; fi
+
 	rm "$lock_id_file"
 	if [ "$(is_locked)" = "false" ]; then
 		rm "$lock_previous_settings_file"
 	fi
+}
+
+clear_locks() {
+	if [ ! -d $lock_dir ]; then return; fi
+
+	rm -rf $lock_dir
 }
 
 set_lact_profile() {
@@ -95,7 +108,6 @@ set_revert_profiles() {
 }
 
 exit_app() {
-	echo -e "\nInterrupted\n"
 	remove_lock
 	if [ "$(is_locked)" = "false" ]; then
 		set_revert_profiles
@@ -104,7 +116,7 @@ exit_app() {
 	fi
 	exit 0
 }
-trap 'exit_app' INT
+trap 'exit_app' INT EXIT ERR SIGTERM
 
 echo "Active tuned profile: $tuned_current_profile"
 echo "Active lact profile: $lact_current_profile"
@@ -113,6 +125,7 @@ echo ""
 if [ "$1" = "default" ]; then
 	echo "Switching to default profiles:"
 	set_default_profiles
+	clear_locks
 	exit 0
 fi
 
@@ -121,5 +134,3 @@ set_performance_profiles
 
 echo -e "Running application\n"
 $app_to_run
-
-exit_app
