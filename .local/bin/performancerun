@@ -108,13 +108,21 @@ set_revert_profiles() {
 }
 
 exit_app() {
+	if [ "$1" = "default" ]; then
+		echo "Switching to default profiles:"
+		set_default_profiles
+		clear_locks
+		return 0
+	fi
+
+	echo "Reverting profiles:"
 	remove_lock
 	if [ "$(is_locked)" = "false" ]; then
 		set_revert_profiles
 	else
 		echo "Performancemode still in use by another app"
 	fi
-	exit 0
+	return 0
 }
 trap 'exit_app' INT EXIT ERR SIGTERM
 
@@ -123,9 +131,6 @@ echo "Active lact profile: $lact_current_profile"
 echo ""
 
 if [ "$1" = "default" ]; then
-	echo "Switching to default profiles:"
-	set_default_profiles
-	clear_locks
 	exit 0
 fi
 
