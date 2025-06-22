@@ -22,6 +22,7 @@ if [ "$status" = "failed" ]; then
 	exit 1
 fi
 
+argument1=$1
 tuned_default_profile="balanced-bazzite"
 tuned_performance_profile="throughput-performance-bazzite"
 tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
@@ -108,7 +109,7 @@ set_revert_profiles() {
 }
 
 exit_app() {
-	if [ "$1" = "default" ]; then
+	if [ "$argument1" = "default" ]; then
 		echo "Switching to default profiles:"
 		set_default_profiles
 		clear_locks
@@ -130,7 +131,7 @@ echo "Active tuned profile: $tuned_current_profile"
 echo "Active lact profile: $lact_current_profile"
 echo ""
 
-if [ "$1" = "default" ]; then
+if [ "$argument1" = "default" ]; then
 	exit 0
 fi
 
