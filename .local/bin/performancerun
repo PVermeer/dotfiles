@@ -120,7 +120,7 @@ exit_app() {
 	if [ "$(is_locked)" = "false" ]; then
 		set_revert_profiles
 	else
-		echo "Performancemode still in use by another app"
+		echo "Performancerun still in use by another app"
 	fi
 	return 0
 }
