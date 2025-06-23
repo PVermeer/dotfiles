@@ -37,13 +37,13 @@ lock_id_file="$lock_dir/$(date +%s)-($(basename "$app_to_run")).lock"
 lock_previous_settings_file_name="previous_settings"
 lock_previous_settings_file="$lock_dir/$lock_previous_settings_file_name"
 
-mkdir -p $lock_dir
+mkdir -p "$lock_dir"
 if [ -f "$lock_previous_settings_file" ]; then
-	source $lock_previous_settings_file
+	source "$lock_previous_settings_file"
 fi
 
 is_locked() {
-	if [ ! -d $lock_dir ]; then
+	if [ ! -d "$lock_dir" ]; then
 		echo "false"
 		return
 	fi
@@ -64,7 +64,7 @@ set_lock() {
 }
 
 remove_lock() {
-	if [ ! -f $lock_id_file ]; then return; fi
+	if [ ! -f "$lock_id_file" ]; then return; fi
 
 	rm "$lock_id_file"
 	if [ "$(is_locked)" = "false" ]; then
@@ -73,9 +73,9 @@ remove_lock() {
 }
 
 clear_locks() {
-	if [ ! -d $lock_dir ]; then return; fi
+	if [ ! -d "$lock_dir" ]; then return; fi
 
-	rm -rf $lock_dir
+	rm -rf "$lock_dir"
 }
 
 set_lact_profile() {
