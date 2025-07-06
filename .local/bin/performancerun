@@ -3,13 +3,21 @@
 set -e
 set -o pipefail
 
+app_to_run="$@"
+argument1="$1"
+
+lock_dir="$XDG_RUNTIME_DIR/performancerun"
+lock_id_file="$lock_dir/$(date +%s)-($(basename "$app_to_run")).lock"
+lock_previous_settings_file_name="previous_settings"
+lock_previous_settings_file="$lock_dir/$lock_previous_settings_file_name"
+
 # Some restart logic because the flatpak LACT daemon takes ages to load on login
 max_restart=20
 restart_timeout=1
 restart_counter=$((0))
 status="failed"
 while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
-	if systemctl is-active --quiet lactd.service; then
+	if [ -S "/run/lactd.sock" ] || [ -d "$lock_dir" ]; then
 		status="success"
 		break
 	else
@@ -22,7 +30,6 @@ if [ "$status" = "failed" ]; then
 	exit 1
 fi
 
-argument1=$1
 tuned_default_profile="balanced-bazzite"
 tuned_performance_profile="throughput-performance-bazzite"
 tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
@@ -31,11 +38,6 @@ lact_performance_profile="Performance"
 lact_default_profile="Balanced"
 lact_current_profile=$(cd $HOME && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
 
-app_to_run="$@"
-lock_dir="$XDG_RUNTIME_DIR/performancerun"
-lock_id_file="$lock_dir/$(date +%s)-($(basename "$app_to_run")).lock"
-lock_previous_settings_file_name="previous_settings"
-lock_previous_settings_file="$lock_dir/$lock_previous_settings_file_name"
 
 mkdir -p "$lock_dir"
 if [ -f "$lock_previous_settings_file" ]; then
