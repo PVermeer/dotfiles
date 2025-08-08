@@ -38,7 +38,6 @@ lact_performance_profile="Performance"
 lact_default_profile="Balanced"
 lact_current_profile=$(cd $HOME && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
 
-
 mkdir -p "$lock_dir"
 if [ -f "$lock_previous_settings_file" ]; then
 	source "$lock_previous_settings_file"
@@ -110,7 +109,13 @@ set_revert_profiles() {
 	set_lact_profile $lact_current_profile
 }
 
+exit_has_run="false"
 exit_app() {
+	if [ "$exit_has_run" = "true" ]; then
+		return 0
+	fi
+	exit_has_run="true"
+
 	if [ "$argument1" = "default" ]; then
 		echo "Switching to default profiles:"
 		set_default_profiles
@@ -118,7 +123,7 @@ exit_app() {
 		return 0
 	fi
 
-	echo "Reverting profiles:"
+	echo -e "\n\nReverting profiles:"
 	remove_lock
 	if [ "$(is_locked)" = "false" ]; then
 		set_revert_profiles
