@@ -176,7 +176,8 @@ __bash_prompt
 
 # Run flatpaks by name via flatrun <APP NAME>
 function flatrun() {
-    app_name="$@"
+    app_name="$1"
+    shift
     app_id=$(flatpak list | grep -F -i "$app_name" | awk '{for(i=1;i<=NF;i++){ if($i ~ /\S+\.\S*/){print $i; break;} } }')
-    flatpak run $app_id
+    flatpak run $app_id $@
 }
