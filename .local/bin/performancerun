@@ -3,7 +3,7 @@
 set -e
 set -o pipefail
 
-app_to_run="$@"
+app_to_run="$*"
 argument1="$1"
 
 lock_dir="$XDG_RUNTIME_DIR/performancerun"
@@ -21,7 +21,7 @@ while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
 		status="success"
 		break
 	else
-		restart_counter=$(($restart_counter + 1))
+		restart_counter=$((restart_counter + 1))
 		sleep $restart_timeout
 	fi
 done
@@ -36,10 +36,11 @@ tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
 
 lact_performance_profile="Performance"
 lact_default_profile="Balanced"
-lact_current_profile=$(cd $HOME && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
+lact_current_profile=$(cd "$HOME" && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
 
 mkdir -p "$lock_dir"
 if [ -f "$lock_previous_settings_file" ]; then
+	# shellcheck disable=SC1090
 	source "$lock_previous_settings_file"
 fi
 
@@ -59,8 +60,8 @@ is_locked() {
 set_lock() {
 	touch "$lock_id_file"
 	if [ ! -f "$lock_previous_settings_file" ]; then
-		echo "tuned_current_profile=$tuned_current_profile" >>$lock_previous_settings_file
-		echo "lact_current_profile=$lact_current_profile" >>$lock_previous_settings_file
+		echo "tuned_current_profile=$tuned_current_profile" >>"$lock_previous_settings_file"
+		echo "lact_current_profile=$lact_current_profile" >>"$lock_previous_settings_file"
 	fi
 }
 
@@ -80,9 +81,10 @@ clear_locks() {
 }
 
 set_lact_profile() {
-	local name="$@"
+	local name="$*"
+	# shellcheck disable=SC2089
 	local json="{\"command\": \"set_profile\", \"args\": {\"name\":\"$name\"}}"
-	(cd $HOME && echo $json | ncat -U /run/lactd.sock &>/dev/null)
+	(cd "$HOME" && echo "$json" | ncat -U /run/lactd.sock &>/dev/null)
 }
 
 set_default_profiles() {
@@ -103,10 +105,10 @@ set_performance_profiles() {
 
 set_revert_profiles() {
 	echo "Switching to tuned profile: $tuned_current_profile"
-	tuned-adm profile $tuned_current_profile
+	tuned-adm profile "$tuned_current_profile"
 
 	echo "Switching to lact profile: $lact_current_profile"
-	set_lact_profile $lact_current_profile
+	set_lact_profile "$lact_current_profile"
 }
 
 exit_has_run="false"
