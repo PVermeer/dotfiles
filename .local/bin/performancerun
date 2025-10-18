@@ -6,12 +6,47 @@ set -o pipefail
 app_to_run="$*"
 argument1="$1"
 
+# Exit logic
+exit_has_run="false"
+exit_app() {
+	exit_code=$?
+	if [ "$exit_has_run" = "true" ]; then
+		return 0
+	fi
+	exit_has_run="true"
+
+	if ((exit_code > 0)); then
+		echo "Sending notification"
+		notify-send --app-name="Performancerun" "Performancerun error" "Error in setting performancerun for app '$app_to_run'"
+		clear_locks >/dev/null 2>&1 || true
+		set_default_profiles >/dev/null 2>&1 || true
+		return 1
+	fi
+
+	if [ "$argument1" = "default" ]; then
+		echo "Switching to default profiles:"
+		clear_locks
+		set_default_profiles
+		return 0
+	fi
+
+	echo -e "\n\nReverting profiles:"
+	remove_lock
+	if [ "$(is_locked)" = "false" ]; then
+		set_revert_profiles
+	else
+		echo "Performancerun still in use by another app"
+	fi
+	return 0
+}
+trap 'exit_app' INT EXIT ERR SIGTERM
+
 lock_dir="$XDG_RUNTIME_DIR/performancerun"
 lock_id_file="$lock_dir/$(date +%s)-($(basename "$app_to_run")).lock"
 lock_previous_settings_file_name="previous_settings"
 lock_previous_settings_file="$lock_dir/$lock_previous_settings_file_name"
 
-# Some restart logic because the flatpak LACT daemon takes ages to load on login
+# Some restart logic because the flatpak LACT daemon takes ages to load after login
 max_restart=20
 restart_timeout=1
 restart_counter=$((0))
@@ -19,6 +54,13 @@ status="failed"
 while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
 	if [ -S "/run/lactd.sock" ] || [ -d "$lock_dir" ]; then
 		status="success"
+
+		if [ -f "$lock_previous_settings_file" ]; then
+			echo "{
+				tuned_current_profile=$tuned_default_profile
+				act_current_profile=$lact_default_profile
+			}" >"$lock_previous_settings_file"
+		fi
 		break
 	else
 		restart_counter=$((restart_counter + 1))
@@ -26,7 +68,7 @@ while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
 	fi
 done
 if [ "$status" = "failed" ]; then
-	echo "Error: Lact daemon or socket is not available"
+	echo "Error: Lact daemon or socket is not available" >&2
 	exit 1
 fi
 
@@ -36,7 +78,7 @@ tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
 
 lact_performance_profile="Performance"
 lact_default_profile="Balanced"
-lact_current_profile=$(cd "$HOME" && echo "{\"command\": \"list_profiles\", \"args\": {\"include_state\": true }}" | ncat -U /run/lactd.sock | jq -r .data.current_profile)
+lact_current_profile=$(flatpak run io.github.ilya_zlobintsev.LACT cli profile get)
 
 mkdir -p "$lock_dir"
 if [ -f "$lock_previous_settings_file" ]; then
@@ -82,9 +124,7 @@ clear_locks() {
 
 set_lact_profile() {
 	local name="$*"
-	# shellcheck disable=SC2089
-	local json="{\"command\": \"set_profile\", \"args\": {\"name\":\"$name\"}}"
-	(cd "$HOME" && echo "$json" | ncat -U /run/lactd.sock &>/dev/null)
+	flatpak run io.github.ilya_zlobintsev.LACT cli profile set "$name" >/dev/null
 }
 
 set_default_profiles() {
@@ -110,31 +150,6 @@ set_revert_profiles() {
 	echo "Switching to lact profile: $lact_current_profile"
 	set_lact_profile "$lact_current_profile"
 }
-
-exit_has_run="false"
-exit_app() {
-	if [ "$exit_has_run" = "true" ]; then
-		return 0
-	fi
-	exit_has_run="true"
-
-	if [ "$argument1" = "default" ]; then
-		echo "Switching to default profiles:"
-		set_default_profiles
-		clear_locks
-		return 0
-	fi
-
-	echo -e "\n\nReverting profiles:"
-	remove_lock
-	if [ "$(is_locked)" = "false" ]; then
-		set_revert_profiles
-	else
-		echo "Performancerun still in use by another app"
-	fi
-	return 0
-}
-trap 'exit_app' INT EXIT ERR SIGTERM
 
 echo "Active tuned profile: $tuned_current_profile"
 echo "Active lact profile: $lact_current_profile"
