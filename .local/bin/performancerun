@@ -78,7 +78,7 @@ tuned_current_profile=$(tuned-adm active | awk '{print $NF}')
 
 lact_performance_profile="Performance"
 lact_default_profile="Balanced"
-lact_current_profile=$(flatpak run io.github.ilya_zlobintsev.LACT cli profile get)
+lact_current_profile=$(flatpak run io.github.ilya_zlobintsev.LACT cli profile get | tail -n 1)
 
 mkdir -p "$lock_dir"
 if [ -f "$lock_previous_settings_file" ]; then
