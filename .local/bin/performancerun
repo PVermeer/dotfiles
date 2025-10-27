@@ -6,6 +6,12 @@ set -o pipefail
 app_to_run="$*"
 argument1="$1"
 
+notify_error() {
+	local error=$*
+	echo "$error" >&2
+	notify-send --app-name="Performancerun" "Performancerun error" "$error"
+}
+
 # Exit logic
 exit_has_run="false"
 exit_app() {
@@ -15,11 +21,15 @@ exit_app() {
 	fi
 	exit_has_run="true"
 
-	if ((exit_code > 0)); then
-		echo "Sending notification"
-		notify-send --app-name="Performancerun" "Performancerun error" "Error in setting performancerun for app '$app_to_run'"
+	if ((exit_code == 2)); then
+		notify_error "Lact daemon or socket is not available"
+		return 1
+	elif ((exit_code == 3)); then
+		notify_error "Application crashed: '$app_to_run'"
+	elif ((exit_code > 0)); then
 		clear_locks >/dev/null 2>&1 || true
 		set_default_profiles >/dev/null 2>&1 || true
+		notify_error "Setting performancerun failed for app '$app_to_run'"
 		return 1
 	fi
 
@@ -68,8 +78,7 @@ while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
 	fi
 done
 if [ "$status" = "failed" ]; then
-	echo "Error: Lact daemon or socket is not available" >&2
-	exit 1
+	exit 2
 fi
 
 tuned_default_profile="balanced-bazzite"
@@ -163,4 +172,7 @@ set_lock
 set_performance_profiles
 
 echo -e "Running application\n"
-$app_to_run
+if ! $app_to_run; then
+	echo "App error"
+	exit 3
+fi
