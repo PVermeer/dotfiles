@@ -2,12 +2,10 @@
 set -e
 set -o pipefail
 
-script_name=$(basename $0)
-
 is_updated="false"
 
 fail() {
-  local message="$@"
+  local message=$*
   echo -e "\n$message"
   return 1
 }
@@ -21,8 +19,8 @@ update_proton_ge() {
   steam_proton_ge_digest_file="$steam_proton_ge_dir/digest"
   steam_proton_ge_compatibility_file="$steam_proton_ge_dir/compatibilitytool.vdf"
 
-  installed_version=$(awk '{ print $2 }' $steam_proton_ge_version_file) || echo ""
-  installed_digest=$(cat $steam_proton_ge_digest_file)
+  installed_version=$(awk '{ print $2 }' "$steam_proton_ge_version_file") || echo ""
+  installed_digest=$(cat "$steam_proton_ge_digest_file")
 
   echo -e "\nGetting latest version"
   latest_uri="https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest"
@@ -33,10 +31,10 @@ update_proton_ge() {
   latest_download_url=$(echo "$latest_asset" | jq -r ".browser_download_url") || fail "No download url found in release" || return 1
 
   if [ ! -d "$steam_proton_ge_dir" ]; then
-    mkdir $steam_proton_ge_dir
+    mkdir "$steam_proton_ge_dir"
   fi
   if [ ! -f "$steam_proton_ge_digest_file" ]; then
-    touch $steam_proton_ge_digest_file
+    touch "$steam_proton_ge_digest_file"
   fi
 
   echo -e "\nChecking versions"
@@ -61,17 +59,17 @@ update_proton_ge() {
   echo -e "\nTemp file in: $latest_tar_file"
 
   echo -e "\nExtracting archive to $steam_proton_ge_dir"
-  rm -rf $steam_proton_ge_dir/*
-  tar -xf $latest_tar_file -C $steam_proton_ge_dir --strip-components=1
+  rm -rf "${steam_proton_ge_dir:?}/*"
+  tar -xf "$latest_tar_file" -C "$steam_proton_ge_dir" --strip-components=1
 
   # Change name to latest
-  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" $steam_proton_ge_compatibility_file
+  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" "$steam_proton_ge_compatibility_file"
   # Update steam config to latest proton-ge version
-  sed -i "s/\"GE-Proton.*\"/\"$latest_version\"/" $steam_config_file
+  sed -i "s/\"GE-Proton.*\"/\"$latest_version\"/" "$steam_config_file"
   # Update digest to latest version
-  echo "$latest_digest" >$steam_proton_ge_digest_file
+  echo "$latest_digest" >"$steam_proton_ge_digest_file"
 
-  rm $latest_tar_file
+  rm "$latest_tar_file"
   is_updated="true"
   echo -e "\nDone"
 }
@@ -90,7 +88,7 @@ while [ $restart_counter -lt $max_restart ] && [ "$status" = "failed" ]; do
     fi
     break
   else
-    restart_counter=$(($restart_counter + 1))
+    restart_counter=$((restart_counter + 1))
     sleep $restart_timeout
     echo "Retry to update: $restart_counter"
   fi
@@ -98,5 +96,11 @@ done
 
 if [ "$status" = "failed" ]; then
   echo -e "\nFailed to update Proton-GE"
+
+  # Check for internet
+  if ! wget -q --spider http://google.com; then
+      echo "No internet connection"
+  fi
+
   exit 1
 fi
