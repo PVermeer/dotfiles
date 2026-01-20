@@ -4,8 +4,8 @@ set -e
 set -x
 
 # Log everything to logger
-script_name=$(basename $0)
-exec 1> >(logger -s -t $script_name) 2>&1
+script_name=$(basename "$0")
+exec 1> >(logger -s -t "$script_name") 2>&1
 
 startOrEnd="$1"               # "start" | "end"
 disableScaling="$2"           # "no-scaling"
@@ -16,12 +16,12 @@ virtual_display_refresh="60"  # Default
 # Display connectors
 GNOMEwDisplay1="DP-1"
 GNOMEwDisplay2="HDMI-1"
-GNOMEwDisplay3="DP-3"   # Virtual kernel monitor
-GNOMEwDisplay4="Meta-0" # Virtual gnome monitor
+GNOMEwDisplay3="DP-3" # Virtual kernel monitor
+# GNOMEwDisplay4="Meta-0" # Virtual gnome monitor
 
 GNOMExDisplay1="DisplayPort-0"
 GNOMExDisplay2="HDMI-A-0"
-GNOMExDisplay3="DisplayPort-2"   # Virtual kernel monitor
+GNOMExDisplay3="DisplayPort-2" # Virtual kernel monitor
 
 KDEwDisplay1="DP-1"
 KDEwDisplay2="HDMI-A-1"
@@ -36,7 +36,7 @@ elif [ "$XDG_CURRENT_DESKTOP" = "GNOME" ] && [ "$XDG_SESSION_TYPE" = "wayland" ]
   display1="$GNOMEwDisplay1"
   display2="$GNOMEwDisplay2"
   display3="$GNOMEwDisplay3"
-  
+
 elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
   display1="$KDEwDisplay1"
   display2="$KDEwDisplay2"
@@ -57,6 +57,8 @@ if [[ $startOrEnd == 'start' ]]; then
   # Disable real monitors and enable virtual monitor
   displayScaleFactor="1"
 
+  disableScaling="no-scaling" #!!! DIsabled scaling for now because screen is only partially captured
+
   # Scaling still buggy with steam
   if [ "$disableScaling" = "no-scaling" ]; then
     displayScaleFactor="1"
@@ -69,9 +71,9 @@ if [[ $startOrEnd == 'start' ]]; then
   fi
 
   if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
-    gdctl set --logical-monitor --primary --scale $displayScaleFactor --monitor $display3 --mode ${virtual_display_width}x${virtual_display_height}@${virtual_display_refresh}.000
+    gdctl set --logical-monitor --primary --scale $displayScaleFactor --monitor "$display3" --mode "${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}".000
   elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
-    kscreen-doctor output.${KDEwDisplay1}.disable output.${KDEwDisplay2}.disable output.${display3}.enable output.${display3}.mode.${virtual_display_width}x${virtual_display_height}@${virtual_display_refresh} output.${display3}.scale.${displayScaleFactor}
+    kscreen-doctor output.${KDEwDisplay1}.disable output.${KDEwDisplay2}.disable output."${display3}".enable output."${display3}".mode."${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}" output."${display3}".scale.${displayScaleFactor}
   fi
 
   # Do not disturb
@@ -88,9 +90,9 @@ elif [[ $startOrEnd == 'end' ]]; then
 
   # Enable real monitors again
   if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
-    gdctl set --logical-monitor --primary --monitor $display1 --mode 1920x1080@60.000+vrr --logical-monitor --monitor $display2 --right-of $display1
+    gdctl set --logical-monitor --primary --monitor "$display1" --mode 1920x1080@60.000+vrr --logical-monitor --monitor "$display2" --right-of "$display1"
   elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
-    kscreen-doctor output.${display1}.enable output.${display2}.enable output.${display3}.disable
+    kscreen-doctor output."${display1}".enable output."${display2}".enable output."${display3}".disable
   fi
 
 fi
