@@ -23,7 +23,7 @@ function run_command() {
 }
 
 # Get login commands if defined
-login_commands_script="$script_dir/login_commands.sh"
+login_commands_script="$script_dir/login-script_commands.sh"
 login_commands=()
 # shellcheck disable=SC1090
 if [ -f "$login_commands_script" ]; then
