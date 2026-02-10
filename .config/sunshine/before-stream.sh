@@ -57,8 +57,6 @@ if [[ $startOrEnd == 'start' ]]; then
   # Disable real monitors and enable virtual monitor
   displayScaleFactor="1"
 
-  disableScaling="no-scaling" #!!! DIsabled scaling for now because screen is only partially captured
-
   # Scaling still buggy with steam
   if [ "$disableScaling" = "no-scaling" ]; then
     displayScaleFactor="1"
