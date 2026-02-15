@@ -14,33 +14,29 @@ virtual_display_height="1080" # Default
 virtual_display_refresh="60"  # Default
 
 # Display connectors
-GNOMEwDisplay1="DP-1"
-GNOMEwDisplay2="HDMI-1"
-GNOMEwDisplay3="DP-3" # Virtual kernel monitor
-# GNOMEwDisplay4="Meta-0" # Virtual gnome monitor
+GNOME_primary_display="DP-1"
+GNOME_secondary_display="HDMI-1"
+GNOME_virtual_display="DP-3" # virtual-display
+# GNOME_service_monitor="Meta-0"    # Virtual gnome monitor
 
-GNOMExDisplay1="DisplayPort-0"
-GNOMExDisplay2="HDMI-A-0"
-GNOMExDisplay3="DisplayPort-2" # Virtual kernel monitor
+KDE_primary_display="DP-1"
+KDE_secondary_display="HDMI-A-1"
+KDE_virtual_display="DP-3" # virtual-display
 
-KDEwDisplay1="DP-1"
-KDEwDisplay2="HDMI-A-1"
-KDEwDisplay3="DP-3" # Virtual kernel monitor
+if [ "$XDG_SESSION_TYPE" = "x11" ]; then
+  echo "X11 is no longer supported"
+  exit 1
+fi
 
-if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ] && [ "$XDG_SESSION_TYPE" = "x11" ]; then
-  display1="$GNOMExDisplay1"
-  display2="$GNOMExDisplay2"
-  display3="$GNOMExDisplay3"
-
-elif [ "$XDG_CURRENT_DESKTOP" = "GNOME" ] && [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-  display1="$GNOMEwDisplay1"
-  display2="$GNOMEwDisplay2"
-  display3="$GNOMEwDisplay3"
+if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
+  primary_display="$GNOME_primary_display"
+  secondary_display="$GNOME_secondary_display"
+  virtual_display="$GNOME_virtual_display"
 
 elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
-  display1="$KDEwDisplay1"
-  display2="$KDEwDisplay2"
-  display3="$KDEwDisplay3"
+  primary_display="$KDE_primary_display"
+  secondary_display="$KDE_secondary_display"
+  virtual_display="$KDE_virtual_display"
 fi
 
 if [ -n "$SUNSHINE_CLIENT_WIDTH" ] && [ -n "$SUNSHINE_CLIENT_HEIGHT" ] && [ -n "$SUNSHINE_CLIENT_FPS" ]; then
@@ -68,10 +64,13 @@ if [[ $startOrEnd == 'start' ]]; then
     fi
   fi
 
+  # Enable virtual-display
+  virtual-display enable --connector "$virtual_display"
+
   if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
-    gdctl set --logical-monitor --primary --scale $displayScaleFactor --monitor "$display3" --mode "${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}".000
+    gdctl set --logical-monitor --primary --scale $displayScaleFactor --monitor "$virtual_display" --mode "${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}".000
   elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
-    kscreen-doctor output.${KDEwDisplay1}.disable output.${KDEwDisplay2}.disable output."${display3}".enable output."${display3}".mode."${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}" output."${display3}".scale.${displayScaleFactor}
+    kscreen-doctor output."${primary_display}".disable output."${secondary_display}".disable output."${virtual_display}".enable output."${virtual_display}".mode."${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}" output."${virtual_display}".scale.${displayScaleFactor}
   fi
 
   # Do not disturb
@@ -88,9 +87,12 @@ elif [[ $startOrEnd == 'end' ]]; then
 
   # Enable real monitors again
   if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
-    gdctl set --logical-monitor --primary --monitor "$display1" --mode 1920x1080@60.000+vrr --logical-monitor --monitor "$display2" --right-of "$display1"
+    gdctl set --logical-monitor --primary --monitor "$primary_display" --mode 1920x1080@60.000+vrr --logical-monitor --monitor "$secondary_display" --right-of "$primary_display"
   elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
-    kscreen-doctor output."${display1}".enable output."${display2}".enable output."${display3}".disable
+    kscreen-doctor output."${primary_display}".enable output."${secondary_display}".enable output."${virtual_display}".disable
   fi
+
+  # Disable virtual-display
+  virtual-display disable
 
 fi
