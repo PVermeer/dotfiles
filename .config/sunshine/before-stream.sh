@@ -87,7 +87,7 @@ elif [[ $startOrEnd == 'end' ]]; then
 
   # Enable real monitors again
   if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
-    gdctl set --logical-monitor --primary --monitor "$primary_display" --mode 1920x1080@60.000+vrr --logical-monitor --monitor "$secondary_display" --right-of "$primary_display"
+    gdctl set --logical-monitor --primary --monitor "$primary_display" --mode 1920x1080@74.973+vrr --logical-monitor --monitor "$secondary_display" --right-of "$primary_display"
   elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
     kscreen-doctor output."${primary_display}".enable output."${secondary_display}".enable output."${virtual_display}".disable
   fi
