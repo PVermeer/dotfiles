@@ -42,7 +42,8 @@ fi
 if [ -n "$SUNSHINE_CLIENT_WIDTH" ] && [ -n "$SUNSHINE_CLIENT_HEIGHT" ] && [ -n "$SUNSHINE_CLIENT_FPS" ]; then
   virtual_display_width="$SUNSHINE_CLIENT_WIDTH"
   virtual_display_height="$SUNSHINE_CLIENT_HEIGHT"
-  virtual_display_refresh="$SUNSHINE_CLIENT_FPS"
+#  virtual_display_refresh="$SUNSHINE_CLIENT_FPS"
+  virtual_display_refresh="120"
 fi
 
 if [[ $startOrEnd == 'start' ]]; then
