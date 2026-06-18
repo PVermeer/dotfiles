@@ -12,12 +12,13 @@ disableScaling="$2"           # "no-scaling"
 virtual_display_width="1920"  # Default
 virtual_display_height="1080" # Default
 virtual_display_refresh="60"  # Default
+virtual_display_hdr=""        # Default (does not check if monitor actually supports hdr)
 
 # Display connectors
 GNOME_primary_display="DP-1"
 GNOME_secondary_display="HDMI-1"
 GNOME_virtual_display="DP-3" # virtual-display
-# GNOME_service_monitor="Meta-0"    # Virtual gnome monitor
+# GNOME_service_monitor="Meta-0"  # Virtual gnome monitor
 
 KDE_primary_display="DP-1"
 KDE_secondary_display="HDMI-A-1"
@@ -42,8 +43,12 @@ fi
 if [ -n "$SUNSHINE_CLIENT_WIDTH" ] && [ -n "$SUNSHINE_CLIENT_HEIGHT" ] && [ -n "$SUNSHINE_CLIENT_FPS" ]; then
   virtual_display_width="$SUNSHINE_CLIENT_WIDTH"
   virtual_display_height="$SUNSHINE_CLIENT_HEIGHT"
-#  virtual_display_refresh="$SUNSHINE_CLIENT_FPS"
-  virtual_display_refresh="120"
+  virtual_display_refresh="$SUNSHINE_CLIENT_FPS"
+#  virtual_display_refresh="120"
+fi
+
+if [ "$SUNSHINE_CLIENT_HDR" = "true" ]; then
+  virtual_display_hdr="--color-mode bt2100"
 fi
 
 if [[ $startOrEnd == 'start' ]]; then
@@ -69,7 +74,8 @@ if [[ $startOrEnd == 'start' ]]; then
   virtual-display enable --connector "$virtual_display"
 
   if [ "$XDG_CURRENT_DESKTOP" = "GNOME" ]; then
-    gdctl set --logical-monitor --primary --scale $displayScaleFactor --monitor "$virtual_display" --mode "${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}".000
+    # shellcheck disable=SC2086
+    gdctl set --logical-monitor --primary --scale $displayScaleFactor --monitor "$virtual_display" --mode "${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}".000 $virtual_display_hdr
   elif [ "$XDG_CURRENT_DESKTOP" = "KDE" ]; then
     kscreen-doctor output."${primary_display}".disable output."${secondary_display}".disable output."${virtual_display}".enable output."${virtual_display}".mode."${virtual_display_width}"x"${virtual_display_height}"@"${virtual_display_refresh}" output."${virtual_display}".scale.${displayScaleFactor}
   fi
