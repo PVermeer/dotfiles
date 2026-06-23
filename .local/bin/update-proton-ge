@@ -2,19 +2,20 @@
 set -e
 set -o pipefail
 
-is_updated="false"
-
 fail() {
   local message=$*
   echo -e "\n$message"
   return 1
 }
 
+compatibility_tool_name=Proton-GE-latest
+is_updated="false"
+
 update_proton_ge() {
   steam_comp_dir="$HOME/.local/share/Steam/compatibilitytools.d"
   steam_config_file="$HOME/.local/share/Steam/config/config.vdf"
 
-  steam_proton_ge_dir="$steam_comp_dir/GE-Proton-latest"
+  steam_proton_ge_dir="$steam_comp_dir/$compatibility_tool_name"
   steam_proton_ge_version_file="$steam_proton_ge_dir/version"
   steam_proton_ge_digest_file="$steam_proton_ge_dir/digest"
   steam_proton_ge_compatibility_file="$steam_proton_ge_dir/compatibilitytool.vdf"
@@ -63,7 +64,7 @@ update_proton_ge() {
   tar -xf "$latest_tar_file" -C "$steam_proton_ge_dir" --strip-components=1
 
   # Change name to latest
-  sed -i "s/\"display_name\"\s.*/\"display_name\" \"GE-Proton-latest\"/" "$steam_proton_ge_compatibility_file"
+  sed -i "s/\"display_name\"\s.*/\"display_name\" \"$compatibility_tool_name\"/" "$steam_proton_ge_compatibility_file"
   # Update steam config to latest proton-ge version
   sed -i "s/\"GE-Proton.*\"/\"$latest_version\"/" "$steam_config_file"
   # Update digest to latest version
@@ -99,7 +100,7 @@ if [ "$status" = "failed" ]; then
 
   # Check for internet
   if ! wget -q --spider http://google.com; then
-      echo "No internet connection"
+    echo "No internet connection"
   fi
 
   exit 1
