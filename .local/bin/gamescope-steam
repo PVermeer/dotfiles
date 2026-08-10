@@ -50,5 +50,4 @@ gamescope \
     -- bazzite-steam \
     -gamepadui \
     -steamos3 \
-    -steampal \
     -steamdeck
