@@ -27,7 +27,7 @@ update_proton_ge() {
   latest_uri="https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest"
   latest_release_json=$(curl -f "$latest_uri") || fail "No release found" || return 1
   latest_version=$(echo "$latest_release_json" | jq -r ".tag_name") || fail "No latest version found in release" || return 1
-  latest_asset=$(echo "$latest_release_json" | jq -r -e ".assets.[] | select(.name == \"${latest_version}.tar.gz\")") || fail "No assets found in release" || return 1
+  latest_asset=$(echo "$latest_release_json" | jq -r -e ".assets.[] | select(.name == \"${latest_version}-x86_64.tar.gz\")") || fail "No assets found in release" || return 1
   latest_digest=$(echo "$latest_asset" | jq -r ".digest") || fail "No digest found in release" || return 1
   latest_download_url=$(echo "$latest_asset" | jq -r ".browser_download_url") || fail "No download url found in release" || return 1
 
