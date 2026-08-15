@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -e
+set -x
+
+steamos_launch_args="\
+    -steamos3 \
+    -steamdeck \
+    -steampal"
+
+if [ "$1" == "gamescope" ]; then
+
+    display=""
+    if [ -n "$SUNSHINE_CLIENT_WIDTH" ]; then
+        display="${display} -W $SUNSHINE_CLIENT_WIDTH"
+    fi
+    if [ -n "$SUNSHINE_CLIENT_HEIGHT" ]; then
+        display="${display} -H $SUNSHINE_CLIENT_HEIGHT"
+    fi
+    if [ -n "$SUNSHINE_CLIENT_FPS" ]; then
+        display="${display} -r $SUNSHINE_CLIENT_FPS"
+    fi
+
+    if [ -n "$GAMESCOPE_WIDTH" ]; then
+        display="${display} -W $GAMESCOPE_WIDTH"
+    fi
+    if [ -n "$GAMESCOPE_HEIGHT" ]; then
+        display="${display} -H $GAMESCOPE_HEIGHT"
+    fi
+    if [ -n "$GAMESCOPE_FPS" ]; then
+        display="${display} -r $GAMESCOPE_FPS"
+    fi
+
+    if [ -z "$display" ]; then
+        display="-H 2160 -W 3840"
+    fi
+
+    if [ "$SUNSHINE_CLIENT_HDR" = "true" ] || [ "$GAMESCOPE_HDR" = "true" ]; then
+        display="${display} --hdr-enabled"
+    fi
+
+    # shellcheck disable=SC2086
+    gamescope \
+        --fullscreen \
+        --hide-cursor-delay 3000 \
+        --fade-out-duration 200 \
+        --force-grab-cursor \
+        --mangoapp \
+        --steam \
+        $display \
+        -- bazzite-steam \
+        $steamos_launch_args \
+        -gamepadui
+else
+    # shellcheck disable=SC2086
+    bazzite-steam \
+        $steamos_launch_args
+fi
