@@ -58,12 +58,12 @@ if [[ $startOrEnd == 'start' ]]; then
   # Disable real monitors and enable virtual monitor
   displayScaleFactor="1"
 
-  # Scaling still buggy with steam
+  # Scaling still buggy with some apps
   if [ "$disableScaling" = "no-scaling" ]; then
     displayScaleFactor="1"
   else
     if [ "$SUNSHINE_CLIENT_HEIGHT" = "2160" ]; then
-      displayScaleFactor="2.5"
+      displayScaleFactor="2.0"
     elif [ "$SUNSHINE_CLIENT_HEIGHT" = "1080" ]; then
       displayScaleFactor="1.25"
     fi
